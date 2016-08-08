@@ -1,0 +1,10 @@
+{
+  "name": "JokeRegistry",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "body-parser": "~1.15.1",
+    "express": "~4.13.4",
+    "mongoose": "~4.5.8"
+  }
+}

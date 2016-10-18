@@ -36,14 +36,15 @@ router.get('/', function(req, res) {
 router.route('/services')
     .get(function (req, res) {
         ServiceModel.find().exec(function(err, services) {
-            if (err)
+            if (err) {
+                res.status(500);
                 res.send(err);
-            else {
+            } else {
                 // Remove secret from putput
                 var output = JSON.parse(JSON.stringify(services));
                 output.forEach(function(item, index) {
                     delete item.secret;
-                })
+                });
                 res.json(output);
             }
         });
@@ -63,10 +64,12 @@ router.route('/services')
             } else {
                 // save the message and check for errors
                 service.save(function(err) {
-                    if (err)
+                    if (err) {
+                        res.status(500);
                         res.send(err);
-                    else
-                        res.json({ message: 'Service saved!' });
+                    } else {
+                        res.json({message: 'Service saved!'});
+                    }
                 });
             }
         });
@@ -77,10 +80,13 @@ router.route('/services')
             if (err) res.send(err);
             else {
                 if (services.length > 1) {
+                    res.status(400);
                     res.send({message : "Error! Duplicate services in the registry!"});
                 } else if (services.length == 0) {
+                    res.status(400);
                     res.send({message : "Error! Service not found!"});
                 } else if (services[0].secret != req.body.secret) {
+                    res.status(400);
                     res.send({message : "Error! Secret does not match!"});
                 } else {
                     var service = services[0];
@@ -93,7 +99,7 @@ router.route('/services')
                 }
             }
         });
-    })
+    });
 
 
 // REGISTER OUR ROUTES -------------------------------

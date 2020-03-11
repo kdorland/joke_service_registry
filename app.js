@@ -1,32 +1,27 @@
-var express    = require('express');        // call express
-var app        = express();                 // define our app using express
-var bodyParser = require('body-parser');
-var morgan     = require('morgan');
+const express = require('express');  // call express
+const app = express(); // define our app using express
+const bodyParser = require('body-parser');
+const morgan = require('morgan');
+const cors = require('cors');
 
 // INITIALIZATION
 // =============================================================================
-app.set('port', (process.env.PORT || 8080)); // Set the port
+app.set('port', process.env.PORT || 8080); // Set the port
 
+app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(morgan('combined'));
 
-var mongoose = require('mongoose');
-mongoose.Promise = global.Promise;
-mongoose.connect('mongodb://registry:dip999@ds042459.mlab.com:42459/krdo_joke_registry');
+const mongoose = require('mongoose');
+const url = process.env.MONGO_URL || 'mongodb://localhost/joke_registry';
+mongoose.connect(url);
 
-var ServiceModel = require('./models/service');
+const ServiceModel = require('./models/service');
 
 // ROUTES FOR OUR API
 // =============================================================================
-var router = express.Router();
-
-// Opening up API for cors (Cross-origin resource sharing)
-router.use(function(req, res, next) {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    next(); // make sure we go to the next routes and don't stop here
-});
+const router = express.Router();
 
 // Welcome route
 router.get('/', function(req, res) {
@@ -41,7 +36,7 @@ router.route('/services')
                 res.send(err);
             } else {
                 // Remove secret from putput
-                var output = JSON.parse(JSON.stringify(services));
+                const output = JSON.parse(JSON.stringify(services));
                 output.forEach(function(item, index) {
                     delete item.secret;
                 });
@@ -51,7 +46,7 @@ router.route('/services')
     })
 
     .post(function(req, res) {
-        var service = new ServiceModel();
+        const service = new ServiceModel();
         service.address = req.body.address;
         service.secret = req.body.secret;
         service.name = req.body.name;
@@ -63,12 +58,12 @@ router.route('/services')
                 res.send({message : "Service already registered!"});
             } else {
                 // save the message and check for errors
-                service.save(function(err) {
+                service.save(function(err, service) {
                     if (err) {
                         res.status(500);
                         res.send(err);
                     } else {
-                        res.json({message: 'Service saved!'});
+                        res.json({message: 'Service saved!', service: service});
                     }
                 });
             }
@@ -82,10 +77,10 @@ router.route('/services')
                 if (services.length > 1) {
                     res.status(400);
                     res.send({message : "Error! Duplicate services in the registry!"});
-                } else if (services.length == 0) {
+                } else if (services.length === 0) {
                     res.status(400);
                     res.send({message : "Error! Service not found!"});
-                } else if (services[0].secret != req.body.secret) {
+                } else if (services[0].secret !== req.body.secret) {
                     res.status(400);
                     res.send({message : "Error! Secret does not match!"});
                 } else {
@@ -105,7 +100,6 @@ router.route('/services')
 // REGISTER OUR ROUTES -------------------------------
 // all of our routes will be prefixed with /api
 app.use('/api', router);
-
 
 // START THE SERVER
 // =============================================================================
